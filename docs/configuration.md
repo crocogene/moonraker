@@ -2502,7 +2502,6 @@ folder that provides supplemental information for the application.  The
             "libsodium-dev",
             "zlib1g-dev",
             "libjpeg-dev",
-            "packagekit",
             "wireless-tools",
             "curl"
         ]

@@ -6,7 +6,6 @@ SYSTEMDDIR="/etc/systemd/system"
 REBUILD_ENV="${MOONRAKER_REBUILD_ENV:-n}"
 FORCE_SYSTEM_INSTALL="${MOONRAKER_FORCE_SYSTEM_INSTALL:-n}"
 DISABLE_SYSTEMCTL="${MOONRAKER_DISABLE_SYSTEMCTL:-n}"
-SKIP_POLKIT="${MOONRAKER_SKIP_POLKIT:-n}"
 CONFIG_PATH="${MOONRAKER_CONFIG_PATH}"
 LOG_PATH="${MOONRAKER_LOG_PATH}"
 DATA_PATH="${MOONRAKER_DATA_PATH}"
@@ -211,7 +210,7 @@ class SysDepsParser:
 system_deps = {
     "debian": [
         "python3-virtualenv", "python3-dev", "libopenjp2-7", "libsodium-dev",
-        "zlib1g-dev", "libjpeg-dev", "packagekit",
+        "zlib1g-dev", "libjpeg-dev",
         "wireless-tools; distro_id != 'ubuntu' or distro_version <= '24.04'",
         "iw; distro_id == 'ubuntu' and distro_version >= '24.10'", "curl",
         "build-essential"
@@ -314,12 +313,7 @@ init_data_path()
     [ -n "${CONFIG_PATH}" ] && config_file=${CONFIG_PATH}
     # Write initial configuration for first time installs
     if [ ! -f $SERVICE_FILE ] && [ ! -e "${config_file}" ]; then
-        # detect machine provider
-        if [ "$( systemctl is-active dbus )" = "active" ]; then
-            provider="systemd_dbus"
-        else
-            provider="systemd_cli"
-        fi
+        provider="systemd_cli"
         report_status "Writing Config File ${config_file}:\n"
         /bin/sh -c "cat > ${config_file}" << EOF
 # Moonraker Configuration File
@@ -383,60 +377,6 @@ EOF
     fi
 }
 
-# Step 7: Validate/Install polkit rules
-check_polkit_rules()
-{
-    if [ ! -x "$(command -v pkaction || true)" ]; then
-        echo "PolKit not installed"
-        return
-    fi
-    if [ "${SKIP_POLKIT}" = "y" ]; then
-        echo "Skipping PolKit rules installation"
-        return
-    fi
-    POLKIT_VERSION="$( pkaction --version | grep -Po "(\d+\.?\d*)" )"
-    NEED_POLKIT_INSTALL="n"
-    if [ $FORCE_SYSTEM_INSTALL = "n" ]; then
-        if [ "$POLKIT_VERSION" = "0.105" ]; then
-            POLKIT_LEGACY_FILE="/etc/polkit-1/localauthority/50-local.d/10-moonraker.pkla"
-            # legacy policykit rules don't give users other than root read access
-            if sudo [ ! -f $POLKIT_LEGACY_FILE ]; then
-                NEED_POLKIT_INSTALL="y"
-            else
-                echo "PolKit rules file found at ${POLKIT_LEGACY_FILE}"
-            fi
-        else
-            POLKIT_FILE="/etc/polkit-1/rules.d/moonraker.rules"
-            POLKIT_USR_FILE="/usr/share/polkit-1/rules.d/moonraker.rules"
-            if sudo [ -f $POLKIT_FILE ]; then
-                echo "PolKit rules file found at ${POLKIT_FILE}"
-            elif sudo [ -f $POLKIT_USR_FILE ]; then
-                echo "PolKit rules file found at ${POLKIT_USR_FILE}"
-            else
-                NEED_POLKIT_INSTALL="y"
-            fi
-        fi
-    else
-        NEED_POLKIT_INSTALL="y"
-    fi
-    if [ "${NEED_POLKIT_INSTALL}" = "y" ]; then
-        report_status "Installing PolKit Rules"
-        polkit_script="${SRCDIR}/scripts/set-policykit-rules.sh"
-        if [ $IS_SRC_DIST != "y" ]; then
-            py_bin="$PYTHONDIR/bin/python"
-            pkg_path="$( $py_bin -c 'import moonraker; print(moonraker.__path__[0])')"
-            polkit_script="${pkg_path}/scripts/set-policykit-rules.sh"
-        fi
-        if [ -f "$polkit_script" ]; then
-            set +e
-            $polkit_script -z
-            set -e
-        else
-            echo "PolKit rule install script not found at $polkit_script"
-        fi
-    fi
-}
-
 # Step 8: Start server
 start_software()
 {
@@ -464,7 +404,6 @@ while getopts "rfzxsc:l:d:a:" arg; do
         r) REBUILD_ENV="y";;
         f) FORCE_SYSTEM_INSTALL="y";;
         z) DISABLE_SYSTEMCTL="y";;
-        x) SKIP_POLKIT="y";;
         s) SPEEDUPS="y";;
         c) CONFIG_PATH=$OPTARG;;
         l) LOG_PATH=$OPTARG;;
@@ -496,7 +435,6 @@ install_packages
 create_virtualenv
 init_data_path
 install_script
-check_polkit_rules
 if [ $DISABLE_SYSTEMCTL = "n" ]; then
     start_software
 fi
