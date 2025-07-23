@@ -1107,8 +1107,9 @@ class SystemdCliProvider(BaseProvider):
             prop_args = ",".join(properties)
             #props: str = await self.shell_cmd.exec_cmd(
             props: str = await self._exec_sudo_command( #sudoed
-                f"systemctl show -p {prop_args} {unit_name}", attempts=5,
-                timeout=10.
+                f"systemctl show -p {prop_args} {unit_name}"
+                #, attempts=5,
+                #timeout=10.
             )
             raw_props: Dict[str, Any] = {}
             lines = [p.strip() for p in props.split("\n") if p.strip()]
