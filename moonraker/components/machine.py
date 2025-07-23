@@ -1037,7 +1037,8 @@ class SystemdCliProvider(BaseProvider):
     async def _detect_active_services(self) -> None:
         machine: Machine = self.server.lookup_component("machine")
         try:
-            resp: str = await self.shell_cmd.exec_cmd(
+            #resp: str = await self.shell_cmd.exec_cmd(
+            resp: str = await self._exec_sudo_command( #sudoed
                 "systemctl list-units --all --type=service --plain"
                 " --no-legend")
             lines = resp.split('\n')
