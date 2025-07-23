@@ -1090,9 +1090,10 @@ class SystemdCliProvider(BaseProvider):
         if properties is None:
             properties = SERVICE_PROPERTIES
         try:
-            resp: str = await self.shell_cmd.exec_cmd(
-                f"systemctl status {pid}"
-            )
+            #resp: str = await self.shell_cmd.exec_cmd(
+            #    f"systemctl status {pid}"
+            #)
+            resp: str = await self.do_service_action("status", pid) #sudoed
             unit_name = resp.split(maxsplit=2)[1]
             service_info["unit_name"] = unit_name
             service_info["is_default"] = True
