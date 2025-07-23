@@ -1364,7 +1364,6 @@ WantedBy=multi-user.target
 [Service]
 Type=simple
 User=%s
-SupplementaryGroups=moonraker-admin
 RemainAfterExit=yes
 EnvironmentFile=%s
 ExecStart=%s $MOONRAKER_ARGS

@@ -349,7 +349,6 @@ install_script()
     fi
     [ -f $SERVICE_FILE ] && [ $FORCE_SYSTEM_INSTALL = "n" ] && return
     report_status "Installing system start script..."
-    sudo groupadd -f moonraker-admin
     sudo /bin/sh -c "cat > ${SERVICE_FILE}" << EOF
 # systemd service file for moonraker
 [Unit]
@@ -363,7 +362,6 @@ WantedBy=multi-user.target
 [Service]
 Type=simple
 User=$USER
-SupplementaryGroups=moonraker-admin
 RemainAfterExit=yes
 EnvironmentFile=${ENV_FILE}
 ExecStart=${PYTHONDIR}/bin/python \$MOONRAKER_ARGS
