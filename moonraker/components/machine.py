@@ -1091,11 +1091,9 @@ class SystemdCliProvider(BaseProvider):
             properties = SERVICE_PROPERTIES
         try:
             #resp: str = await self.shell_cmd.exec_cmd(
-            #    f"systemctl status {pid}"
-            #)
-            resp: str = await self._exec_sudo_command(
+            resp: str = await self._exec_sudo_command( #sudoed
                 f"systemctl status {pid}"
-            ) #sudoed
+            )
             unit_name = resp.split(maxsplit=2)[1]
             service_info["unit_name"] = unit_name
             service_info["is_default"] = True
@@ -1107,7 +1105,8 @@ class SystemdCliProvider(BaseProvider):
                     f"{unit_name}"
                 )
             prop_args = ",".join(properties)
-            props: str = await self.shell_cmd.exec_cmd(
+            #props: str = await self.shell_cmd.exec_cmd(
+            props: str = await self._exec_sudo_command( #sudoed
                 f"systemctl show -p {prop_args} {unit_name}", attempts=5,
                 timeout=10.
             )
