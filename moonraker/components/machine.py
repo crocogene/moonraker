@@ -995,8 +995,8 @@ class SystemdCliProvider(BaseProvider):
     async def do_service_action(self,
                                 action: str,
                                 service_name: str
-                                ):
-        return await self._exec_sudo_command(f"systemctl {action} {service_name}")
+                                ) -> None:
+        await self._exec_sudo_command(f"systemctl {action} {service_name}")
 
     async def check_virt_status(self) -> Dict[str, Any]:
         # Fallback virtualization check
@@ -1093,7 +1093,9 @@ class SystemdCliProvider(BaseProvider):
             #resp: str = await self.shell_cmd.exec_cmd(
             #    f"systemctl status {pid}"
             #)
-            resp: str = await self.do_service_action("status", pid) #sudoed
+            resp: str = await self._exec_sudo_command(
+                f"systemctl status {pid}"
+            ) #sudoed
             unit_name = resp.split(maxsplit=2)[1]
             service_info["unit_name"] = unit_name
             service_info["is_default"] = True
