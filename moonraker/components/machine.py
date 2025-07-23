@@ -986,7 +986,7 @@ class SystemdCliProvider(BaseProvider):
         if self.available_services:
             svcs = list(self.available_services.keys())
             self.svc_cmd = self.shell_cmd.build_shell_command(
-                "systemctl show -p ActiveState,SubState --value "
+                "sudo systemctl show -p ActiveState,SubState --value "  #sudoed
                 f"{' '.join(svcs)}")
             await self._update_service_status(0, notify=True)
             pstats: ProcStats = self.server.lookup_component('proc_stats')
